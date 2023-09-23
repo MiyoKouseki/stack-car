@@ -37,6 +37,14 @@ void setupServerEndpoints()
             request->send(400, "text/plain", "Missing parameters");
         } });
 
+    // 両方のモーターのfactorを取得するエンドポイント
+    server.on("/getMotorFactors", HTTP_GET, [](AsyncWebServerRequest *request)
+              {
+        String response = "Right Motor Factor: " + String(rightMotorFactor) + "\n";
+        response += "Left Motor Factor: " + String(leftMotorFactor);
+        request->send(200, "text/plain", response); 
+    });
+
     server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
               {
         if (SPIFFS.exists("/index.html"))
