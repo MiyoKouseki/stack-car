@@ -1,10 +1,12 @@
 #include <M5Core2.h>
-//#include <WiFi.h>
 #include <WiFiClient.h>
-//#include <SD.h>
 #include "credentials.h"
 #include "MotorController.h"
 #include "ServerEndpoints.h"
+#include "MotorFactors.h"
+
+float rightMotorFactor = 1.0;
+float leftMotorFactor = 1.0;
 
 // ピン番号の定義
 const int MOTOR_RH_PIN = 19;
@@ -27,15 +29,15 @@ const double MOTOR_RH_RATIO = 1.02;
 // 1.000 msec  < Width  < 1.480 msec ... CCW
 // 1.480 msec =< Width =< 1.520 msec ... Stop
 // 1.520 msec  < Width  < 2.000 msec ... CW
-// 1.400 usec ~= 4587
-// 1.500 usec ~= 4915
-// 1.600 usec ~= 5243
 
-MotorController motor(MOTOR_RH_PIN, MOTOR_LH_PIN, MOTOR_CW_PARAM, MOTOR_CCW_PARAM, MOTOR_STOP_PARAM, MOTOR_RH_RATIO);
+MotorController motor(MOTOR_RH_PIN, MOTOR_LH_PIN,
+                      MOTOR_CW_PARAM, MOTOR_CCW_PARAM,
+                      MOTOR_STOP_PARAM, MOTOR_RH_RATIO);
 String currentStatus = "";
 AsyncWebServer server(80);
 
-void updateStatus(const String &newStatus, void (MotorController::*action)())
+void updateStatus(const String &newStatus,
+                  void (MotorController::*action)())
 {
     if (currentStatus != newStatus)
     {
@@ -47,20 +49,23 @@ void updateStatus(const String &newStatus, void (MotorController::*action)())
     (motor.*action)();
 }
 
-// モーターの動作指示を格納する変数
 String motorCommand = "stop";
 
-void setupWiFi() {
+void setupWiFi()
+{
     String ssid, password;
     std::tie(ssid, password) = getCredentials();
 
-    if (ssid.length() == 0 || password.length() == 0) {
+    if (ssid.length() == 0 || password.length() == 0)
+    {
         Serial.println("Failed to retrieve credentials.");
         return;
     }
 
     WiFi.begin(ssid.c_str(), password.c_str());
-    while (WiFi.status() != WL_CONNECTED) {
+
+    while (WiFi.status() != WL_CONNECTED)
+    {
         delay(1000);
         Serial.println("Connecting to WiFi...");
     }
@@ -68,8 +73,8 @@ void setupWiFi() {
     Serial.println(WiFi.localIP());
 }
 
-
-void handleMotorCommand() {
+void handleMotorCommand()
+{
 
     if (motorCommand != "stop")
     {
@@ -91,32 +96,49 @@ void handleMotorCommand() {
     {
         updateStatus("Stop", &MotorController::stop);
     }
-
 }
 
-void setupSerial() {
+void setupSerial()
+{
     Serial.begin(115200);
     Serial.println("Setup completed!");
 }
 
-void setupM5Stack() {
+void setupM5Stack()
+{
     M5.begin(); // M5Stackの初期化
     M5.Lcd.setBrightness(30);
     M5.Lcd.setTextSize(2);
     M5.Lcd.setTextColor(WHITE, BLACK);
 }
 
-void setupMotor() {
+void setupMotor()
+{
     digitalWrite(MOTOR_RH_PIN, LOW);
     digitalWrite(MOTOR_LH_PIN, LOW);
     motor.stop();
 }
 
-void setup() {
+void setup()
+{
     setupSerial();
     setupM5Stack();
     setupMotor();
     setupWiFi();
+    //SPIFFS.format();
+    if (!SPIFFS.begin(true)){
+        Serial.println("An error occurred while mounting SPIFFS");
+        return;
+    }else{
+        Serial.println("SPIFFS mounted successfully");
+    }
+
+    if (SPIFFS.exists("/index.html")){
+        Serial.println("index.html exists!");
+    }else{
+        Serial.println("index.html does not exist!");
+    }
+
     setupServerEndpoints();
 }
 
@@ -124,6 +146,4 @@ void loop()
 {
     M5.update();
     handleMotorCommand();
-
-    
 }

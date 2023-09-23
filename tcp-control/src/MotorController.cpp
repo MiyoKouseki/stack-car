@@ -1,5 +1,5 @@
 #include <Arduino.h>
-
+#include "MotorFactors.h"
 #include "MotorController.h"
 
 const uint8_t MOTOR_RH_CHANNEL = 1;
@@ -16,22 +16,22 @@ MotorController::MotorController(int rh, int lh, int cw, int ccw, int stop, doub
     ledcSetup(MOTOR_LH_CHANNEL, PWM_FREQ, PWM_BITS);
     ledcAttachPin(PIN_RH, MOTOR_RH_CHANNEL);
     ledcAttachPin(PIN_LH, MOTOR_LH_CHANNEL);
-    //stop();
 }
 
+
 void MotorController::goStraight() {
-    ledcWrite(MOTOR_RH_CHANNEL, param_ccw/param_ratio);
-    ledcWrite(MOTOR_LH_CHANNEL, param_cw);
+    ledcWrite(MOTOR_RH_CHANNEL, param_ccw/param_ratio * rightMotorFactor);
+    ledcWrite(MOTOR_LH_CHANNEL, param_cw * leftMotorFactor);
 }
 
 void MotorController::turnRight() {
-    ledcWrite(MOTOR_RH_CHANNEL, param_cw*param_ratio);
-    ledcWrite(MOTOR_LH_CHANNEL, param_cw);
+    ledcWrite(MOTOR_RH_CHANNEL, param_cw*param_ratio * rightMotorFactor);
+    ledcWrite(MOTOR_LH_CHANNEL, param_cw * leftMotorFactor);
 }
 
 void MotorController::turnLeft() {
-    ledcWrite(MOTOR_RH_CHANNEL, param_ccw/param_ratio);
-    ledcWrite(MOTOR_LH_CHANNEL, param_ccw);
+    ledcWrite(MOTOR_RH_CHANNEL, param_ccw/param_ratio * rightMotorFactor);
+    ledcWrite(MOTOR_LH_CHANNEL, param_ccw * leftMotorFactor);
 }
 
 void MotorController::stop() {
